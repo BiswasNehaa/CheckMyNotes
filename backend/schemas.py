@@ -32,10 +32,9 @@ class PageEvaluationResponse(BaseModel):
     areas_to_improve: List[str] = Field(default_factory=list, description="Actionable tips for the student to practice")
 
 class SubjectCreate(BaseModel):
-    """Payload sent when a student creates a new subject (e.g. History)."""
+    """Payload sent when a student creates a new subject (e.g. Mathematics)."""
     name: str = Field(..., description="Subject name e.g. 'Mathematics' or 'Physics'")
-    color: str = Field("#4F46E5", description="Hex color code for UI badges e.g. '#3B82F6'")
-    icon: str = Field("book", description="Icon name e.g. 'calculator', 'zap', 'flask-conical', 'code'")
+    color: str = Field("#4F46E5", description="Hex color code for UI cards e.g. '#3B82F6'")
     description: Optional[str] = Field(None, description="Optional description or syllabus topics")
 
 class SubjectResponse(BaseModel):
@@ -43,11 +42,11 @@ class SubjectResponse(BaseModel):
     id: str = Field(..., description="Unique subject ID e.g. 'sub_math'")
     name: str = Field(..., description="Subject name")
     color: str = Field(..., description="Hex color code")
-    icon: str = Field(..., description="Icon identifier")
     description: Optional[str] = Field(None, description="Subject description")
     page_count: int = Field(0, description="Total number of uploaded pages in this subject")
     average_score: Optional[float] = Field(None, description="Average AI score across all pages")
     last_updated: Optional[str] = Field(None, description="Timestamp of the most recent page upload")
+
 
 class PageItem(BaseModel):
     """Represents one uploaded notebook page with its image URL and AI evaluation."""
