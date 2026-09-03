@@ -1,0 +1,12 @@
+{
+  "venvPath": ".",
+  "venv": "venv",
+  "extraPaths": [
+    ".",
+    "backend",
+    "venv/Lib/site-packages",
+    "C:/Users/neha1/AppData/Local/Python/pythoncore-3.14-64/Lib/site-packages"
+  ],
+  "reportMissingImports": "none",
+  "reportMissingTypeStubs": false
+}

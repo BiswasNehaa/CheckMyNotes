@@ -9,9 +9,6 @@ DB_PATH = Path(__file__).resolve().parent / "acadine_notebooks.db"
 UPLOADS_DIR = Path(__file__).resolve().parent / "uploads"
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
-# Ensure uploads directory is tracked by git
-(UPLOADS_DIR / ".gitkeep").touch(exist_ok=True)
-
 async def get_db():
     """
     FastAPI Database Dependency.
