@@ -31,3 +31,60 @@ class PageEvaluationResponse(BaseModel):
     strengths: List[str] = Field(default_factory=list, description="List of what the student did well")
     areas_to_improve: List[str] = Field(default_factory=list, description="Actionable tips for the student to practice")
 
+class SubjectCreate(BaseModel):
+    """Payload sent when a student creates a new subject (e.g. History)."""
+    name: str = Field(..., description="Subject name e.g. 'Mathematics' or 'Physics'")
+    color: str = Field("#4F46E5", description="Hex color code for UI badges e.g. '#3B82F6'")
+    icon: str = Field("book", description="Icon name e.g. 'calculator', 'zap', 'flask-conical', 'code'")
+    description: Optional[str] = Field(None, description="Optional description or syllabus topics")
+
+class SubjectResponse(BaseModel):
+    """Data sent to the frontend when listing subjects with stats."""
+    id: str = Field(..., description="Unique subject ID e.g. 'sub_math'")
+    name: str = Field(..., description="Subject name")
+    color: str = Field(..., description="Hex color code")
+    icon: str = Field(..., description="Icon identifier")
+    description: Optional[str] = Field(None, description="Subject description")
+    page_count: int = Field(0, description="Total number of uploaded pages in this subject")
+    average_score: Optional[float] = Field(None, description="Average AI score across all pages")
+    last_updated: Optional[str] = Field(None, description="Timestamp of the most recent page upload")
+
+class PageItem(BaseModel):
+    """Represents one uploaded notebook page with its image URL and AI evaluation."""
+    id: str = Field(..., description="Unique page ID e.g. 'page_a1b2c3d4'")
+    subject_id: str = Field(..., description="Subject code this page belongs to")
+    subject_name: Optional[str] = Field(None, description="Subject name e.g. 'Mathematics'")
+    upload_date: str = Field(..., description="Date uploaded in YYYY-MM-DD format e.g. '2026-09-04'")
+    page_number: int = Field(1, description="Page sequence number within that day's session")
+    image_url: str = Field(..., description="URL path to view the uploaded handwritten image")
+    thumbnail_url: Optional[str] = Field(None, description="Thumbnail URL for quick preview")
+    status: Literal["pending", "processing", "completed", "failed"] = Field("pending", description="AI checking status")
+    evaluation: Optional[PageEvaluationResponse] = Field(None, description="Full AI evaluation results and mistake pins")
+    created_at: str = Field(..., description="Timestamp when the page was uploaded")
+
+class DailySession(BaseModel):
+    """Groups all pages uploaded on a single calendar day for a subject."""
+    date: str = Field(..., description="Date string e.g. '2026-09-04'")
+    formatted_date: str = Field(..., description="Human-friendly date e.g. 'Thursday, Sep 4, 2026'")
+    subject_id: str = Field(..., description="Subject code")
+    subject_name: str = Field(..., description="Subject name")
+    pages: List[PageItem] = Field(default_factory=list, description="Array of pages uploaded on this day")
+    average_score: Optional[float] = Field(None, description="Average AI score for this day's pages")
+    total_errors: int = Field(0, description="Total mistakes found on this day's homework")
+
+class NotebookResponse(BaseModel):
+    """Complete subject notebook containing all daily sessions and cumulative statistics."""
+    subject: SubjectResponse = Field(..., description="Subject metadata and stats")
+    sessions: List[DailySession] = Field(default_factory=list, description="List of all daily upload sessions")
+    total_pages: int = Field(0, description="Total pages across all sessions in this subject")
+    total_sessions: int = Field(0, description="Total number of days notes were uploaded")
+    overall_average_score: Optional[float] = Field(None, description="Cumulative grade average for this subject")
+
+class ApiKeyConfigRequest(BaseModel):
+    """Allows students to configure their own free Gemini / Groq API key in Settings."""
+    groq_api_key: Optional[str] = Field(None, description="Groq API Key (Free tier LLaMA 3.2 Vision)")
+    gemini_api_key: Optional[str] = Field(None, description="Google Gemini API Key (Free tier Gemini 1.5 Flash)")
+    preferred_provider: Literal["groq", "gemini", "auto", "simulated"] = Field("auto", description="AI provider preference")
+
+
+
