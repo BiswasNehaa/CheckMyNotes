@@ -5,7 +5,13 @@ export default function NotebookViewer({ subjects }) {
   const [subjectId, setSubjectId] = useState('')
   const [notebook, setNotebook] = useState(null)
   const [selectedPage, setSelectedPage] = useState(null)
+  const [activeMistake, setActiveMistake] = useState(null)
   const [error, setError] = useState('')
+
+  function handleSelectPage(page) {
+    setSelectedPage(page)
+    setActiveMistake(null)
+  }
 
   async function handleSelectSubject(id) {
     setSubjectId(id)
@@ -51,7 +57,7 @@ export default function NotebookViewer({ subjects }) {
                     <button
                       key={page.id}
                       className={selectedPage?.id === page.id ? 'active' : ''}
-                      onClick={() => setSelectedPage(page)}
+                      onClick={() => handleSelectPage(page)}
                     >
                       Page {page.page_number} ({page.status})
                     </button>
@@ -74,11 +80,23 @@ export default function NotebookViewer({ subjects }) {
                       className={`pin pin-${pin.severity}`}
                       style={{ left: `${pin.x_percent}%`, top: `${pin.y_percent}%` }}
                       title={pin.title}
+                      onClick={() => setActiveMistake(pin)}
                     >
                       {index + 1}
                     </span>
                   ))}
                 </div>
+
+                <p className="pin-hint">Click a numbered marker on the image to see what it means.</p>
+
+                {activeMistake && (
+                  <div className={`mistake-popup mistake-${activeMistake.severity}`}>
+                    <strong>{activeMistake.title}</strong>
+                    <p>{activeMistake.explanation}</p>
+                    {activeMistake.corrected_step && <p>Correction: {activeMistake.corrected_step}</p>}
+                    {activeMistake.concept_refresher && <p>Tip: {activeMistake.concept_refresher}</p>}
+                  </div>
+                )}
 
                 {!selectedPage.evaluation && (
                   <p className="pending-note">This page is still pending evaluation.</p>

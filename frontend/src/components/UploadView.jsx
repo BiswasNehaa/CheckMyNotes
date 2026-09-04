@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { uploadPages } from '../api'
+import { uploadPages, evaluatePage } from '../api'
 
 function today() {
   return new Date().toISOString().slice(0, 10)
@@ -28,7 +28,13 @@ export default function UploadView({ subjects }) {
 
     try {
       const result = await uploadPages({ subjectId, uploadDate, files })
-      setMessage(`Uploaded ${result.uploaded.length} page(s) successfully.`)
+
+      // Evaluate each page right away so it doesn't sit as "pending" forever.
+      for (const page of result.uploaded) {
+        await evaluatePage(page.id)
+      }
+
+      setMessage(`Uploaded and checked ${result.uploaded.length} page(s) successfully.`)
       setFiles([])
       e.target.reset()
     } catch (err) {

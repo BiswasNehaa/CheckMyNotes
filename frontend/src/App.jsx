@@ -25,7 +25,7 @@ export default function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>Acadine</h1>
+        <h1>CheckMyNotes</h1>
         <nav>
           <button
             className={view === 'dashboard' ? 'active' : ''}

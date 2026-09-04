@@ -17,6 +17,12 @@ export async function createSubject(subject) {
   return res.json()
 }
 
+export async function evaluatePage(pageId) {
+  const res = await fetch(`/pages/${pageId}/evaluate`, { method: 'POST' })
+  if (!res.ok) throw new Error('Failed to evaluate page')
+  return res.json()
+}
+
 export async function getNotebook(subjectId) {
   const res = await fetch(`/subjects/${subjectId}/notebook`)
   if (!res.ok) throw new Error('Failed to load notebook')
