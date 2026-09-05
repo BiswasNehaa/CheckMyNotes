@@ -79,6 +79,17 @@ class NotebookResponse(BaseModel):
     total_sessions: int = Field(0, description="Total number of days notes were uploaded")
     overall_average_score: Optional[float] = Field(None, description="Cumulative grade average for this subject")
 
+class LoginRequest(BaseModel):
+    """Payload sent when a student logs in with just their name (no password)."""
+    name: str = Field(..., description="Student's display name")
+
+
+class StudentResponse(BaseModel):
+    """Minimal student identity returned after login."""
+    id: str = Field(..., description="Unique student ID e.g. 'stu_a1b2c3d4'")
+    name: str = Field(..., description="Student's display name")
+
+
 class ApiKeyConfigRequest(BaseModel):
     """Allows students to configure their own free Gemini / Groq API key in Settings."""
     groq_api_key: Optional[str] = Field(None, description="Groq API Key (Free tier LLaMA 3.2 Vision)")

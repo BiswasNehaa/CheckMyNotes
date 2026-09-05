@@ -1,8 +1,42 @@
 // Simple fetch helpers for talking to the FastAPI backend.
 // Requests go through the Vite dev proxy (see vite.config.js).
 
+const STUDENT_STORAGE_KEY = 'checkmynotes_student'
+
+export function getStoredStudent() {
+  try {
+    const raw = localStorage.getItem(STUDENT_STORAGE_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
+export function storeStudent(student) {
+  localStorage.setItem(STUDENT_STORAGE_KEY, JSON.stringify(student))
+}
+
+export function clearStoredStudent() {
+  localStorage.removeItem(STUDENT_STORAGE_KEY)
+}
+
+function authHeaders() {
+  const student = getStoredStudent()
+  return student ? { 'X-Student-Id': student.id } : {}
+}
+
+export async function login(name) {
+  const res = await fetch('/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  })
+  if (!res.ok) throw new Error('Failed to log in')
+  return res.json()
+}
+
 export async function getSubjects() {
-  const res = await fetch('/subjects')
+  const res = await fetch('/subjects', { headers: authHeaders() })
   if (!res.ok) throw new Error('Failed to load subjects')
   return res.json()
 }
@@ -10,7 +44,7 @@ export async function getSubjects() {
 export async function createSubject(subject) {
   const res = await fetch('/subjects', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(subject),
   })
   if (!res.ok) throw new Error('Failed to create subject')
@@ -24,7 +58,7 @@ export async function evaluatePage(pageId) {
 }
 
 export async function getNotebook(subjectId) {
-  const res = await fetch(`/subjects/${subjectId}/notebook`)
+  const res = await fetch(`/subjects/${subjectId}/notebook`, { headers: authHeaders() })
   if (!res.ok) throw new Error('Failed to load notebook')
   return res.json()
 }
@@ -39,6 +73,7 @@ export async function uploadPages({ subjectId, uploadDate, files }) {
 
   const res = await fetch('/pages/upload', {
     method: 'POST',
+    headers: authHeaders(),
     body: formData,
   })
   if (!res.ok) throw new Error('Failed to upload pages')

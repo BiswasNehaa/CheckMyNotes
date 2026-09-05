@@ -5,24 +5,28 @@ from typing import List
 
 import aiofiles
 import aiosqlite
-from fastapi import FastAPI, Depends, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, Depends, File, Form, Header, HTTPException, UploadFile
 from fastapi.staticfiles import StaticFiles
 
 from ai_service import evaluate_page
 from database import init_db, get_db, UPLOADS_DIR
 from schemas import (
     DailySession,
+    LoginRequest,
     NotebookResponse,
     PageEvaluationResponse,
     PageItem,
+    StudentResponse,
     SubjectCreate,
     SubjectResponse,
 )
 
-# Single default student used for now instead of real authentication.
-DEFAULT_STUDENT_ID = "default_student"
-
 app = FastAPI(title="Acadine API")
+
+
+async def get_student_id(x_student_id: str = Header(..., alias="X-Student-Id")) -> str:
+    """Identify the logged-in student from a request header (set after /login)."""
+    return x_student_id
 
 # Serve uploaded page images so the frontend can display them.
 app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
@@ -40,13 +44,38 @@ async def health():
     return {"status": "ok"}
 
 
+@app.post("/login", response_model=StudentResponse)
+async def login(payload: LoginRequest, db: aiosqlite.Connection = Depends(get_db)):
+    """Log in with just a name: reuses the existing student record, or creates one."""
+    name = payload.name.strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Name is required")
+
+    cursor = await db.execute("SELECT id, name FROM students WHERE name = ?", (name,))
+    row = await cursor.fetchone()
+    if row:
+        return StudentResponse(id=row["id"], name=row["name"])
+
+    student_id = f"stu_{uuid.uuid4().hex[:8]}"
+    await db.execute(
+        "INSERT INTO students (id, name, grade) VALUES (?, ?, ?)",
+        (student_id, name, ""),
+    )
+    await db.commit()
+    return StudentResponse(id=student_id, name=name)
+
+
 @app.post("/subjects", response_model=SubjectResponse)
-async def create_subject(subject: SubjectCreate, db: aiosqlite.Connection = Depends(get_db)):
-    """Create a new subject (e.g. Mathematics) for the default student."""
+async def create_subject(
+    subject: SubjectCreate,
+    db: aiosqlite.Connection = Depends(get_db),
+    student_id: str = Depends(get_student_id),
+):
+    """Create a new subject (e.g. Mathematics) for the logged-in student."""
     subject_id = f"sub_{uuid.uuid4().hex[:8]}"
     await db.execute(
         "INSERT INTO subjects (id, student_id, name, color, description) VALUES (?, ?, ?, ?, ?)",
-        (subject_id, DEFAULT_STUDENT_ID, subject.name, subject.color, subject.description),
+        (subject_id, student_id, subject.name, subject.color, subject.description),
     )
     await db.commit()
 
@@ -62,11 +91,14 @@ async def create_subject(subject: SubjectCreate, db: aiosqlite.Connection = Depe
 
 
 @app.get("/subjects", response_model=List[SubjectResponse])
-async def list_subjects(db: aiosqlite.Connection = Depends(get_db)):
-    """List all subjects for the default student."""
+async def list_subjects(
+    db: aiosqlite.Connection = Depends(get_db),
+    student_id: str = Depends(get_student_id),
+):
+    """List all subjects for the logged-in student."""
     cursor = await db.execute(
         "SELECT id, name, color, description FROM subjects WHERE student_id = ?",
-        (DEFAULT_STUDENT_ID,),
+        (student_id,),
     )
     rows = await cursor.fetchall()
 
@@ -90,6 +122,7 @@ async def upload_pages(
     upload_date: str = Form(...),
     files: List[UploadFile] = File(...),
     db: aiosqlite.Connection = Depends(get_db),
+    student_id: str = Depends(get_student_id),
 ):
     """Save uploaded notebook page images and create a 'pending' record for each."""
     uploaded = []
@@ -106,7 +139,7 @@ async def upload_pages(
             """INSERT INTO notebook_pages
                (id, student_id, subject_id, upload_date, page_number, file_path, status)
                VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (page_id, DEFAULT_STUDENT_ID, subject_id, upload_date, index, file_name, "pending"),
+            (page_id, student_id, subject_id, upload_date, index, file_name, "pending"),
         )
 
         uploaded.append({
@@ -154,11 +187,15 @@ async def evaluate_uploaded_page(page_id: str, db: aiosqlite.Connection = Depend
 
 
 @app.get("/subjects/{subject_id}/notebook", response_model=NotebookResponse)
-async def get_subject_notebook(subject_id: str, db: aiosqlite.Connection = Depends(get_db)):
+async def get_subject_notebook(
+    subject_id: str,
+    db: aiosqlite.Connection = Depends(get_db),
+    student_id: str = Depends(get_student_id),
+):
     """Return all uploaded pages (with evaluations, if any) for a subject, grouped by day."""
     subject_cursor = await db.execute(
         "SELECT id, name, color, description FROM subjects WHERE id = ? AND student_id = ?",
-        (subject_id, DEFAULT_STUDENT_ID),
+        (subject_id, student_id),
     )
     subject_row = await subject_cursor.fetchone()
     if subject_row is None:

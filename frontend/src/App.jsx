@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
-import { getSubjects } from './api'
+import { clearStoredStudent, getStoredStudent, getSubjects, storeStudent } from './api'
+import Login from './components/Login'
 import SubjectDashboard from './components/SubjectDashboard'
 import UploadView from './components/UploadView'
 import NotebookViewer from './components/NotebookViewer'
 import './App.css'
 
 export default function App() {
+  const [student, setStudent] = useState(() => getStoredStudent())
   const [view, setView] = useState('dashboard')
   const [subjects, setSubjects] = useState([])
 
@@ -19,8 +21,23 @@ export default function App() {
   }
 
   useEffect(() => {
-    loadSubjects()
-  }, [])
+    if (student) loadSubjects()
+  }, [student])
+
+  function handleLogin(loggedInStudent) {
+    storeStudent(loggedInStudent)
+    setStudent(loggedInStudent)
+  }
+
+  function handleLogout() {
+    clearStoredStudent()
+    setStudent(null)
+    setSubjects([])
+  }
+
+  if (!student) {
+    return <Login onLogin={handleLogin} />
+  }
 
   return (
     <div className="app">
@@ -46,6 +63,10 @@ export default function App() {
             Notebook
           </button>
         </nav>
+        <div className="app-header-user">
+          <span>{student.name}</span>
+          <button onClick={handleLogout}>Log out</button>
+        </div>
       </header>
 
       <main>

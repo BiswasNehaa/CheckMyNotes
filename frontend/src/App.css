@@ -25,6 +25,54 @@
   color: white;
 }
 
+.app-header-user {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+.login-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-form {
+  width: 280px;
+  text-align: center;
+}
+
+.login-form h1 {
+  margin-bottom: 0.25rem;
+}
+
+.login-form p {
+  color: #6b7280;
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.login-form input {
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+  box-sizing: border-box;
+}
+
+.login-form button[type='submit'] {
+  width: 100%;
+}
+
+.login-error {
+  color: #dc2626;
+  font-size: 0.85rem;
+}
+
 .card {
   background: white;
   border: 1px solid #e5e7eb;
