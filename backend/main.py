@@ -95,9 +95,17 @@ async def list_subjects(
     db: aiosqlite.Connection = Depends(get_db),
     student_id: str = Depends(get_student_id),
 ):
-    """List all subjects for the logged-in student."""
+    """List all subjects for the logged-in student, with actual page counts and average scores."""
     cursor = await db.execute(
-        "SELECT id, name, color, description FROM subjects WHERE student_id = ?",
+        """SELECT s.id, s.name, s.color, s.description,
+                  COUNT(p.id) AS page_count,
+                  AVG(e.score) AS average_score,
+                  MAX(p.created_at) AS last_updated
+           FROM subjects s
+           LEFT JOIN notebook_pages p ON p.subject_id = s.id
+           LEFT JOIN evaluations e ON e.page_id = p.id
+           WHERE s.student_id = ?
+           GROUP BY s.id""",
         (student_id,),
     )
     rows = await cursor.fetchall()
@@ -108,9 +116,9 @@ async def list_subjects(
             name=row["name"],
             color=row["color"],
             description=row["description"],
-            page_count=0,
-            average_score=None,
-            last_updated=None,
+            page_count=row["page_count"],
+            average_score=round(row["average_score"], 1) if row["average_score"] is not None else None,
+            last_updated=row["last_updated"],
         )
         for row in rows
     ]
