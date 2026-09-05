@@ -156,6 +156,7 @@ async def call_groq_vision(image_path: Path) -> PageEvaluationResponse:
             }
         ],
         "max_completion_tokens": 1500,
+        "temperature": 0.2,
     }
     headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
 
