@@ -1,3 +1,4 @@
+import hashlib
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -150,14 +151,15 @@ async def upload_pages(
         file_name = f"{page_id}{Path(file.filename).suffix}"
 
         contents = await file.read()
+        image_hash = hashlib.sha256(contents).hexdigest()
         async with aiofiles.open(UPLOADS_DIR / file_name, "wb") as out_file:
             await out_file.write(contents)
 
         await db.execute(
             """INSERT INTO notebook_pages
-               (id, student_id, subject_id, upload_date, page_number, file_path, status)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (page_id, student_id, subject_id, upload_date, index, file_name, "pending"),
+               (id, student_id, subject_id, upload_date, page_number, file_path, status, image_hash)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (page_id, student_id, subject_id, upload_date, index, file_name, "pending", image_hash),
         )
 
         uploaded.append({
@@ -175,13 +177,30 @@ async def upload_pages(
 
 @app.post("/pages/{page_id}/evaluate", response_model=PageEvaluationResponse)
 async def evaluate_uploaded_page(page_id: str, db: aiosqlite.Connection = Depends(get_db)):
-    """Run the (simulated) AI evaluation on a single uploaded page and store the result."""
-    cursor = await db.execute("SELECT id, file_path FROM notebook_pages WHERE id = ?", (page_id,))
+    """Run AI evaluation on a single uploaded page and store the result."""
+    cursor = await db.execute(
+        "SELECT id, file_path, image_hash FROM notebook_pages WHERE id = ?", (page_id,)
+    )
     page = await cursor.fetchone()
     if page is None:
         raise HTTPException(status_code=404, detail="Page not found")
 
-    evaluation = await evaluate_page(page_id, UPLOADS_DIR / page["file_path"])
+    # Reuse a prior evaluation if this exact image was already checked, so identical
+    # pages give identical results and we don't burn the AI's tiny free-tier quota twice.
+    cached_evaluation = None
+    if page["image_hash"]:
+        cache_cursor = await db.execute(
+            """SELECT e.raw_json FROM notebook_pages p
+               JOIN evaluations e ON e.page_id = p.id
+               WHERE p.image_hash = ? AND p.id != ?
+               ORDER BY e.created_at DESC LIMIT 1""",
+            (page["image_hash"], page_id),
+        )
+        cache_row = await cache_cursor.fetchone()
+        if cache_row:
+            cached_evaluation = PageEvaluationResponse.model_validate_json(cache_row["raw_json"])
+
+    evaluation = cached_evaluation or await evaluate_page(page_id, UPLOADS_DIR / page["file_path"])
 
     await db.execute(
         """INSERT INTO evaluations

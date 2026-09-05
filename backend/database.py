@@ -64,10 +64,16 @@ async def init_db():
                 page_number INTEGER NOT NULL,
                 file_path TEXT NOT NULL,
                 status TEXT DEFAULT 'pending',
+                image_hash TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
             )
         """)
+        # Older databases created before image_hash existed: add the column if missing.
+        try:
+            await db.execute("ALTER TABLE notebook_pages ADD COLUMN image_hash TEXT")
+        except aiosqlite.OperationalError:
+            pass
 
         # 4. Evaluations Table (stores AI scores, summaries, and mistake pins JSON)
         await db.execute("""
