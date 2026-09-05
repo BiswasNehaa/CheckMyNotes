@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { downloadNotebookPdf, downloadSessionPdf, getNotebook } from '../api'
+import { downloadNotebookPdf, downloadPagePdf, downloadSessionPdf, getNotebook } from '../api'
 
 export default function NotebookViewer({ subjects }) {
   const [subjectId, setSubjectId] = useState('')
@@ -31,6 +31,18 @@ export default function NotebookViewer({ subjects }) {
     setDownloading(date)
     try {
       await downloadSessionPdf(subjectId, date, notebook.subject.name)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setDownloading('')
+    }
+  }
+
+  async function handleDownloadPage(page) {
+    setError('')
+    setDownloading(page.id)
+    try {
+      await downloadPagePdf(page.id, notebook.subject.name, page.page_number)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -125,6 +137,13 @@ export default function NotebookViewer({ subjects }) {
                 </div>
 
                 <p className="pin-hint">Click a numbered marker on the image to see what it means.</p>
+
+                <button
+                  onClick={() => handleDownloadPage(selectedPage)}
+                  disabled={downloading === selectedPage.id}
+                >
+                  {downloading === selectedPage.id ? 'Preparing PDF...' : 'Download This Page (PDF)'}
+                </button>
 
                 {activeMistake && (
                   <div className={`mistake-popup mistake-${activeMistake.severity}`}>

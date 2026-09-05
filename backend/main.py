@@ -368,3 +368,38 @@ async def download_session_pdf(
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+@app.get("/pages/{page_id}/pdf")
+async def download_page_pdf(
+    page_id: str,
+    db: aiosqlite.Connection = Depends(get_db),
+    student_id: str = Depends(get_student_id),
+):
+    """Download a single notebook page (with pins) and its evaluation as a PDF."""
+    cursor = await db.execute(
+        """SELECT p.page_number, p.upload_date, p.file_path, s.name AS subject_name, e.raw_json
+           FROM notebook_pages p
+           JOIN subjects s ON s.id = p.subject_id
+           LEFT JOIN evaluations e ON e.page_id = p.id
+           WHERE p.id = ? AND p.student_id = ?""",
+        (page_id, student_id),
+    )
+    row = await cursor.fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Page not found")
+
+    page = {
+        "page_number": row["page_number"],
+        "upload_date": row["upload_date"],
+        "image_path": UPLOADS_DIR / row["file_path"],
+        "evaluation": PageEvaluationResponse.model_validate_json(row["raw_json"]) if row["raw_json"] else None,
+    }
+
+    pdf_bytes = build_notebook_pdf(row["subject_name"], [page])
+    filename = f"{row['subject_name']}_page{row['page_number']}_{row['upload_date']}.pdf".replace(" ", "_")
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )

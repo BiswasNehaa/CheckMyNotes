@@ -88,6 +88,13 @@ export async function downloadSessionPdf(subjectId, uploadDate, subjectName) {
   triggerDownload(blob, `${subjectName}_${uploadDate}.pdf`)
 }
 
+export async function downloadPagePdf(pageId, subjectName, pageNumber) {
+  const res = await fetch(`/pages/${pageId}/pdf`, { headers: authHeaders() })
+  if (!res.ok) throw new Error('Failed to generate page PDF')
+  const blob = await res.blob()
+  triggerDownload(blob, `${subjectName}_page${pageNumber}.pdf`)
+}
+
 export async function uploadPages({ subjectId, uploadDate, files }) {
   const formData = new FormData()
   formData.append('subject_id', subjectId)
