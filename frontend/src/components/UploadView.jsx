@@ -11,7 +11,7 @@ export default function UploadView({ subjects }) {
   const [files, setFiles] = useState([])
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
-  const [isUploading, setIsUploading] = useState(false)
+  const [status, setStatus] = useState('idle') // idle | uploading | evaluating
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -28,25 +28,28 @@ export default function UploadView({ subjects }) {
     }
 
     try {
-      setIsUploading(true)
+      setStatus('uploading')
       const result = await uploadPages({ subjectId, uploadDate, files })
+      setMessage('Uploaded! Evaluating...')
 
-      // Evaluate each page right away so it doesn't sit as "pending" forever.
+      setStatus('evaluating')
       for (const page of result.uploaded) {
         await evaluatePage(page.id)
       }
 
-      setMessage(`Uploaded ${result.uploaded.length} page(s) successfully.`)
+      setMessage(`Uploaded and evaluated ${result.uploaded.length} page(s) successfully.`)
       setFiles([])
       e.target.reset()
     } catch (err) {
       setError(err.message)
     } finally {
-      setIsUploading(false)
+      setStatus('idle')
     }
   }
 
-  const buttonLabel = isUploading ? 'Uploading...' : 'Upload'
+  const isBusy = status !== 'idle'
+  const buttonLabel =
+    status === 'uploading' ? 'Uploading...' : status === 'evaluating' ? 'Evaluating...' : 'Upload'
 
   return (
     <div>
@@ -75,12 +78,12 @@ export default function UploadView({ subjects }) {
             type="file"
             accept="image/*"
             multiple
-            disabled={isUploading}
+            disabled={isBusy}
             onChange={(e) => setFiles(Array.from(e.target.files))}
           />
         </div>
 
-        <button type="submit" disabled={isUploading}>
+        <button type="submit" disabled={isBusy}>
           {buttonLabel}
         </button>
 
