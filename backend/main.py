@@ -6,10 +6,12 @@ from typing import List
 import aiofiles
 import aiosqlite
 from fastapi import FastAPI, Depends, File, Form, Header, HTTPException, UploadFile
+from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 
 from ai_service import evaluate_page
 from database import init_db, get_db, UPLOADS_DIR
+from pdf_service import build_notebook_pdf
 from schemas import (
     DailySession,
     LoginRequest,
@@ -282,4 +284,87 @@ async def get_subject_notebook(
         total_pages=len(page_rows),
         total_sessions=len(sessions),
         overall_average_score=overall_average,
+    )
+
+
+async def _fetch_pages_for_pdf(db: aiosqlite.Connection, subject_id: str, upload_date: str = None):
+    """Fetch pages (with parsed evaluations) for a subject, optionally filtered to one day."""
+    query = """SELECT p.page_number, p.upload_date, p.file_path, e.raw_json
+               FROM notebook_pages p
+               LEFT JOIN evaluations e ON e.page_id = p.id
+               WHERE p.subject_id = ?"""
+    params = [subject_id]
+    if upload_date:
+        query += " AND p.upload_date = ?"
+        params.append(upload_date)
+    query += " ORDER BY p.upload_date, p.page_number"
+
+    cursor = await db.execute(query, params)
+    rows = await cursor.fetchall()
+
+    return [
+        {
+            "page_number": row["page_number"],
+            "upload_date": row["upload_date"],
+            "image_path": UPLOADS_DIR / row["file_path"],
+            "evaluation": PageEvaluationResponse.model_validate_json(row["raw_json"]) if row["raw_json"] else None,
+        }
+        for row in rows
+    ]
+
+
+async def _get_owned_subject_name(db: aiosqlite.Connection, subject_id: str, student_id: str) -> str:
+    """Look up a subject's name, only if it belongs to the given student."""
+    cursor = await db.execute(
+        "SELECT name FROM subjects WHERE id = ? AND student_id = ?",
+        (subject_id, student_id),
+    )
+    row = await cursor.fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Subject not found")
+    return row["name"]
+
+
+@app.get("/subjects/{subject_id}/notebook/pdf")
+async def download_notebook_pdf(
+    subject_id: str,
+    db: aiosqlite.Connection = Depends(get_db),
+    student_id: str = Depends(get_student_id),
+):
+    """Download the full merged notebook (every day's pages) for a subject as one PDF."""
+    subject_name = await _get_owned_subject_name(db, subject_id, student_id)
+
+    pages = await _fetch_pages_for_pdf(db, subject_id)
+    if not pages:
+        raise HTTPException(status_code=404, detail="No pages uploaded yet for this subject")
+
+    pdf_bytes = build_notebook_pdf(subject_name, pages)
+    filename = f"{subject_name}_notebook.pdf".replace(" ", "_")
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@app.get("/subjects/{subject_id}/sessions/{upload_date}/pdf")
+async def download_session_pdf(
+    subject_id: str,
+    upload_date: str,
+    db: aiosqlite.Connection = Depends(get_db),
+    student_id: str = Depends(get_student_id),
+):
+    """Download a single day's uploaded pages for a subject as one PDF."""
+    subject_name = await _get_owned_subject_name(db, subject_id, student_id)
+
+    pages = await _fetch_pages_for_pdf(db, subject_id, upload_date)
+    if not pages:
+        raise HTTPException(status_code=404, detail="No pages uploaded on this date")
+
+    pdf_bytes = build_notebook_pdf(subject_name, pages)
+    filename = f"{subject_name}_{upload_date}.pdf".replace(" ", "_")
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )

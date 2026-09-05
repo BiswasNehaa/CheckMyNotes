@@ -63,6 +63,31 @@ export async function getNotebook(subjectId) {
   return res.json()
 }
 
+function triggerDownload(blob, filename) {
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
+export async function downloadNotebookPdf(subjectId, subjectName) {
+  const res = await fetch(`/subjects/${subjectId}/notebook/pdf`, { headers: authHeaders() })
+  if (!res.ok) throw new Error('Failed to generate notebook PDF')
+  const blob = await res.blob()
+  triggerDownload(blob, `${subjectName}_notebook.pdf`)
+}
+
+export async function downloadSessionPdf(subjectId, uploadDate, subjectName) {
+  const res = await fetch(`/subjects/${subjectId}/sessions/${uploadDate}/pdf`, { headers: authHeaders() })
+  if (!res.ok) throw new Error('Failed to generate session PDF')
+  const blob = await res.blob()
+  triggerDownload(blob, `${subjectName}_${uploadDate}.pdf`)
+}
+
 export async function uploadPages({ subjectId, uploadDate, files }) {
   const formData = new FormData()
   formData.append('subject_id', subjectId)

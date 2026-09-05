@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { getNotebook } from '../api'
+import { downloadNotebookPdf, downloadSessionPdf, getNotebook } from '../api'
 
 export default function NotebookViewer({ subjects }) {
   const [subjectId, setSubjectId] = useState('')
@@ -7,10 +7,35 @@ export default function NotebookViewer({ subjects }) {
   const [selectedPage, setSelectedPage] = useState(null)
   const [activeMistake, setActiveMistake] = useState(null)
   const [error, setError] = useState('')
+  const [downloading, setDownloading] = useState('')
 
   function handleSelectPage(page) {
     setSelectedPage(page)
     setActiveMistake(null)
+  }
+
+  async function handleDownloadNotebook() {
+    setError('')
+    setDownloading('notebook')
+    try {
+      await downloadNotebookPdf(subjectId, notebook.subject.name)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setDownloading('')
+    }
+  }
+
+  async function handleDownloadSession(date) {
+    setError('')
+    setDownloading(date)
+    try {
+      await downloadSessionPdf(subjectId, date, notebook.subject.name)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setDownloading('')
+    }
   }
 
   async function handleSelectSubject(id) {
@@ -48,6 +73,12 @@ export default function NotebookViewer({ subjects }) {
       {notebook && (
         <div className="notebook-layout">
           <div className="session-list">
+            {notebook.sessions.length > 0 && (
+              <button onClick={handleDownloadNotebook} disabled={downloading === 'notebook'}>
+                {downloading === 'notebook' ? 'Preparing PDF...' : 'Download Full Notebook (PDF)'}
+              </button>
+            )}
+
             {notebook.sessions.length === 0 && <p>No pages uploaded yet for this subject.</p>}
             {notebook.sessions.map((session) => (
               <div key={session.date} className="card">
@@ -63,6 +94,12 @@ export default function NotebookViewer({ subjects }) {
                     </button>
                   ))}
                 </div>
+                <button
+                  onClick={() => handleDownloadSession(session.date)}
+                  disabled={downloading === session.date}
+                >
+                  {downloading === session.date ? 'Preparing PDF...' : "Download This Day's PDF"}
+                </button>
               </div>
             ))}
           </div>
