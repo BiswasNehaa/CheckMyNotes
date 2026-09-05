@@ -125,12 +125,12 @@ async def upload_pages(
 @app.post("/pages/{page_id}/evaluate", response_model=PageEvaluationResponse)
 async def evaluate_uploaded_page(page_id: str, db: aiosqlite.Connection = Depends(get_db)):
     """Run the (simulated) AI evaluation on a single uploaded page and store the result."""
-    cursor = await db.execute("SELECT id FROM notebook_pages WHERE id = ?", (page_id,))
+    cursor = await db.execute("SELECT id, file_path FROM notebook_pages WHERE id = ?", (page_id,))
     page = await cursor.fetchone()
     if page is None:
         raise HTTPException(status_code=404, detail="Page not found")
 
-    evaluation = evaluate_page(page_id)
+    evaluation = await evaluate_page(page_id, UPLOADS_DIR / page["file_path"])
 
     await db.execute(
         """INSERT INTO evaluations
