@@ -187,8 +187,11 @@ async def evaluate_page(page_id: str, image_path: Path) -> PageEvaluationRespons
     """
     if GROQ_API_KEY:
         try:
-            return await call_groq_vision(image_path)
-        except Exception:
-            pass  # fall back to the simulated evaluator below
+            result = await call_groq_vision(image_path)
+            print(f"[ai_service] REAL AI: Groq evaluation successful (page_id={page_id})")
+            return result
+        except Exception as exc:
+            print(f"[ai_service] GROQ FAILED (page_id={page_id}): {exc}")
 
+    print(f"[ai_service] FALLBACK: simulated evaluation used (page_id={page_id})")
     return simulate_evaluation(page_id)
