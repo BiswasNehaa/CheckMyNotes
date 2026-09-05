@@ -3,7 +3,6 @@ import { createSubject } from '../api'
 
 export default function SubjectDashboard({ subjects, onSubjectCreated }) {
   const [name, setName] = useState('')
-  const [color, setColor] = useState('#4F46E5')
   const [error, setError] = useState('')
 
   async function handleSubmit(e) {
@@ -12,7 +11,7 @@ export default function SubjectDashboard({ subjects, onSubjectCreated }) {
 
     setError('')
     try {
-      await createSubject({ name, color })
+      await createSubject({ name })
       setName('')
       onSubjectCreated()
     } catch (err) {
@@ -31,12 +30,6 @@ export default function SubjectDashboard({ subjects, onSubjectCreated }) {
             placeholder="Subject name (e.g. Mathematics)"
             value={name}
             onChange={(e) => setName(e.target.value)}
-          />
-          <input
-            type="color"
-            value={color}
-            onChange={(e) => setColor(e.target.value)}
-            title="Subject color"
           />
           <button type="submit">Add Subject</button>
         </div>

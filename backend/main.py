@@ -127,7 +127,15 @@ async def upload_pages(
     """Save uploaded notebook page images and create a 'pending' record for each."""
     uploaded = []
 
-    for index, file in enumerate(files, start=1):
+    count_cursor = await db.execute(
+        "SELECT COUNT(*) AS count FROM notebook_pages WHERE subject_id = ? AND upload_date = ?",
+        (subject_id, upload_date),
+    )
+    count_row = await count_cursor.fetchone()
+    next_page_number = count_row["count"] + 1
+
+    for offset, file in enumerate(files):
+        index = next_page_number + offset
         page_id = f"page_{uuid.uuid4().hex[:8]}"
         file_name = f"{page_id}{Path(file.filename).suffix}"
 
