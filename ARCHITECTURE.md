@@ -232,15 +232,12 @@ Enforces that a student can only generate a PDF for a subject **they own** — t
 | `subjects` | `id`, `student_id`, `name`, `color` | Owned by a student |
 | `notebook_pages` | `id`, `subject_id`, `upload_date`, `page_number`, `file_path`, `status`, `image_hash` | One row per uploaded image |
 | `evaluations` | `id`, `page_id` (UNIQUE), `score`, `raw_json` | One row per evaluated page; `raw_json` stores the full `PageEvaluationResponse` for exact re-serialization |
-| `settings` | `key`, `value` | **Created but currently unused** — see Known Limitations |
 
 `page_id` is `UNIQUE` on `evaluations`, so a page can only ever have one evaluation row — re-evaluating would need a different design (currently there's no "re-check" endpoint, so this hasn't come up).
 
 ### `schemas.py` — the contract between AI output and the frontend
 
 `PageEvaluationResponse` and its nested `MistakePin` are the most important models in the app: they're what the AI's raw JSON gets validated against, and exactly what the frontend renders. `MistakePin.severity` is a `Literal["error", "warning", "good"]` — this is what drives both the pin color on the image and the CSS class in React (`pin-error`, `pin-warning`, `pin-good`).
-
-Notably, `ApiKeyConfigRequest` exists in `schemas.py` but **no endpoint uses it** — it models a "let students bring their own API key" feature that was designed but never wired up (see Known Limitations).
 
 ---
 
@@ -341,7 +338,6 @@ This gets validated into `PageEvaluationResponse`, stored as `raw_json` in `eval
 ## ⚠️ Known Limitations
 
 - No password auth — anyone entering an existing student's exact name reuses that student's data.
-- `ApiKeyConfigRequest` and the `settings` table exist in the schema/DB but **no endpoint reads or writes them** — the "student brings their own API key" idea was designed but not implemented; the key is read only from the backend's own `.env`/Render env var.
 - The evaluation cache is **global by image hash**, not scoped per student — two different students uploading byte-identical images would share a cached result (very unlikely in practice, but not impossible).
 - Only image uploads (JPG/PNG); no PDF-file upload support.
 - Render free-tier deploy has no persistent disk — data resets on backend restart/redeploy.
@@ -351,7 +347,7 @@ This gets validated into `PageEvaluationResponse`, stored as `raw_json` in `eval
 ## 🌟 Future Enhancements
 
 - Real authentication (passwords or OAuth) instead of name-only login.
-- Wire up the already-modeled `ApiKeyConfigRequest`/`settings` table so each student can supply their own Groq/Gemini key.
+- Let each student supply their own Groq/Gemini API key instead of a single backend-wide key.
 - Scope the evaluation cache per-student and add a DB index on `image_hash`.
 - Support PDF-file uploads (convert pages to images server-side before grading).
 - Swap SQLite + local disk for Postgres + object storage to survive redeploys.

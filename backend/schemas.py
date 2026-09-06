@@ -90,11 +90,3 @@ class StudentResponse(BaseModel):
     name: str = Field(..., description="Student's display name")
 
 
-class ApiKeyConfigRequest(BaseModel):
-    """Allows students to configure their own free Gemini / Groq API key in Settings."""
-    groq_api_key: Optional[str] = Field(None, description="Groq API Key (Free tier LLaMA 3.2 Vision)")
-    gemini_api_key: Optional[str] = Field(None, description="Google Gemini API Key (Free tier Gemini 1.5 Flash)")
-    preferred_provider: Literal["groq", "gemini", "auto", "simulated"] = Field("auto", description="AI provider preference")
-
-
-

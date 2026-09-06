@@ -25,7 +25,7 @@ async def get_db():
 async def init_db():
     """
     Initializes database tables on application startup.
-    Creates tables for: students, subjects, notebook_pages, evaluations, and settings.
+    Creates tables for: students, subjects, notebook_pages, and evaluations.
     Also seeds default subjects if the database is brand new.
     """
     async with aiosqlite.connect(DB_PATH) as db:
@@ -88,14 +88,6 @@ async def init_db():
                 raw_json TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (page_id) REFERENCES notebook_pages(id) ON DELETE CASCADE
-            )
-        """)
-
-        # 5. Settings Table (stores API keys and preferences dynamically)
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS settings (
-                key TEXT PRIMARY KEY,
-                value TEXT NOT NULL
             )
         """)
 
