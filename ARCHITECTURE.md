@@ -347,7 +347,6 @@ This gets validated into `PageEvaluationResponse`, stored as `raw_json` in `eval
 ## 🌟 Future Enhancements
 
 - Real authentication (passwords or OAuth) instead of name-only login.
-- Let each student supply their own Groq/Gemini API key instead of a single backend-wide key.
 - Scope the evaluation cache per-student and add a DB index on `image_hash`.
 - Support PDF-file uploads (convert pages to images server-side before grading).
 - Swap SQLite + local disk for Postgres + object storage to survive redeploys.

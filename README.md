@@ -62,4 +62,34 @@ Acadine/
 
 ---
 
+## 🚀 Self-Hosting
+
+This project runs on one shared AI backend, so if you fork/clone it, you'll need your own free API key — it takes 2 minutes:
+
+1. **Get a free Groq API key** at [console.groq.com](https://console.groq.com) (no credit card needed).
+2. **Backend setup:**
+   ```bash
+   cd backend
+   python -m venv venv && venv\Scripts\activate   # Windows; use `source venv/bin/activate` on Mac/Linux
+   pip install -r requirements.txt
+   ```
+   Create a `backend/.env` file with:
+   ```
+   GROQ_API_KEY=your_key_here
+   ```
+   Then run it:
+   ```bash
+   uvicorn main:app --reload
+   ```
+3. **Frontend setup:**
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+
+No key? The app still works — it falls back to a simulated (but consistent) evaluation for every upload, so you can try the full flow without signing up for anything.
+
+---
+
 For a deep dive into the architecture, request flow, and every function, see [ARCHITECTURE.md](./ARCHITECTURE.md).
