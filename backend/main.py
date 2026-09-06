@@ -1,4 +1,5 @@
 import hashlib
+import os
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -7,6 +8,7 @@ from typing import List
 import aiofiles
 import aiosqlite
 from fastapi import FastAPI, Depends, File, Form, Header, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 
@@ -25,6 +27,16 @@ from schemas import (
 )
 
 app = FastAPI(title="Acadine API")
+
+# Allow the deployed frontend (a different origin in production) to call this API.
+# Set FRONTEND_URL in the backend's environment to the frontend's deployed URL.
+frontend_url = os.environ.get("FRONTEND_URL")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[frontend_url] if frontend_url else ["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 async def get_student_id(x_student_id: str = Header(..., alias="X-Student-Id")) -> str:

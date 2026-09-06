@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { downloadNotebookPdf, downloadPagePdf, downloadSessionPdf, getNotebook } from '../api'
+import { API_BASE, downloadNotebookPdf, downloadPagePdf, downloadSessionPdf, getNotebook } from '../api'
 
 export default function NotebookViewer({ subjects }) {
   const [subjectId, setSubjectId] = useState('')
@@ -122,7 +122,7 @@ export default function NotebookViewer({ subjects }) {
             {selectedPage && (
               <div>
                 <div className="image-wrapper">
-                  <img src={selectedPage.image_url} alt={`Page ${selectedPage.page_number}`} />
+                  <img src={`${API_BASE}${selectedPage.image_url}`} alt={`Page ${selectedPage.page_number}`} />
                   {selectedPage.evaluation?.mistakes.map((pin, index) => (
                     <span
                       key={pin.id}
