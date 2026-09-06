@@ -191,7 +191,7 @@ async def upload_pages(
 async def evaluate_uploaded_page(page_id: str, db: aiosqlite.Connection = Depends(get_db)):
     """Run AI evaluation on a single uploaded page and store the result."""
     cursor = await db.execute(
-        "SELECT id, file_path, image_hash FROM notebook_pages WHERE id = ?", (page_id,)
+        "SELECT id, student_id, file_path, image_hash FROM notebook_pages WHERE id = ?", (page_id,)
     )
     page = await cursor.fetchone()
     if page is None:
@@ -204,9 +204,9 @@ async def evaluate_uploaded_page(page_id: str, db: aiosqlite.Connection = Depend
         cache_cursor = await db.execute(
             """SELECT e.raw_json FROM notebook_pages p
                JOIN evaluations e ON e.page_id = p.id
-               WHERE p.image_hash = ? AND p.id != ?
+               WHERE p.image_hash = ? AND p.student_id = ? AND p.id != ?
                ORDER BY e.created_at DESC LIMIT 1""",
-            (page["image_hash"], page_id),
+            (page["image_hash"], page["student_id"], page_id),
         )
         cache_row = await cache_cursor.fetchone()
         if cache_row:
