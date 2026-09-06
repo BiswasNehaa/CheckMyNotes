@@ -5,7 +5,7 @@ function today() {
   return new Date().toISOString().slice(0, 10)
 }
 
-export default function UploadView({ subjects }) {
+export default function UploadView({ subjects, onUploaded }) {
   const [subjectId, setSubjectId] = useState('')
   const [uploadDate, setUploadDate] = useState(today())
   const [files, setFiles] = useState([])
@@ -40,6 +40,7 @@ export default function UploadView({ subjects }) {
       setMessage(`Uploaded and evaluated ${result.uploaded.length} page(s) successfully.`)
       setFiles([])
       e.target.reset()
+      onUploaded?.()
     } catch (err) {
       setError(err.message)
     } finally {

@@ -73,7 +73,7 @@ export default function App() {
         {view === 'dashboard' && (
           <SubjectDashboard subjects={subjects} onSubjectCreated={loadSubjects} />
         )}
-        {view === 'upload' && <UploadView subjects={subjects} />}
+        {view === 'upload' && <UploadView subjects={subjects} onUploaded={loadSubjects} />}
         {view === 'notebook' && <NotebookViewer subjects={subjects} />}
       </main>
     </div>
