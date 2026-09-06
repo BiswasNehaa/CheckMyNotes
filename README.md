@@ -59,3 +59,7 @@ Acadine/
 │   └── vite.config.js
 └── IMPLEMENTATION_PLAN.md
 ```
+
+---
+
+For a deep dive into the architecture, request flow, and every function, see [ARCHITECTURE.md](./ARCHITECTURE.md).

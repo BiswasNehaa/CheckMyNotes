@@ -1,7 +1,7 @@
 # CheckMyNotes — Project Summary
 
 **Repo:** https://github.com/BiswasNehaa/CheckMyNotes
-**Deployed app:** _TBD — to be added after deployment_
+**Deployed app:** https://acadine-frontend.onrender.com
 
 ## What's Done
 - Student login: enter a name, creates/reuses a student record (see assumption below).
@@ -16,10 +16,9 @@
 - Groq's free tier allows only ~1000 output tokens/minute. Uploading several pages back-to-back can cause later pages in the same batch to fall back to the simulated evaluator instead of real AI — by design, so the app never breaks, but accuracy dips under bursty uploads.
 - Only image uploads (JPG/PNG) are supported — no PDF-file upload.
 - The image-hash evaluation cache isn't scoped per student, so two different students uploading byte-identical images would share a cached result (unlikely in practice, but worth noting).
-- Not yet deployed — currently verified working locally only.
+- Deployed on Render's free tier: no persistent disk, so the SQLite database and uploaded images reset if the backend service restarts or redeploys.
 
 ## What's Next
-- Deploy backend + frontend (Render).
 - Time-permitting polish: scope the evaluation cache and evaluate endpoint to the logged-in student, add a database index on the image hash, and lower AI temperature further for even more consistent scoring.
 
 ## Assumptions Made
