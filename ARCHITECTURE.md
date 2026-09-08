@@ -31,7 +31,7 @@ CheckMyNotes lets a student:
 1. Log in with just a name.
 2. Create subjects (Math, Physics, etc.).
 3. Upload photos of handwritten notebook pages, tagged to a subject and date.
-4. Have each page graded automatically by a vision-capable LLM (Groq's LLaMA 3.2 Vision).
+4. Have each page graded automatically by a vision-capable LLM (Groq's Qwen3.6-27B, configurable via `GROQ_MODEL`).
 5. View the grading as **clickable pins directly on the page image** — each pin explains exactly what's wrong (or right) at that spot, with a corrected step and a concept refresher.
 6. Download the graded pages as a PDF — a single page, a single day's pages, or the entire subject's notebook merged into one file with pins burned into the image.
 
@@ -58,7 +58,7 @@ Every architectural choice below traces back to those three priorities.
 | **Backend framework** | **FastAPI + Uvicorn** | Async by default (good for I/O-bound AI/file calls), auto-generates OpenAPI docs at `/docs`, minimal boilerplate — fast to build under a deadline. |
 | **Data validation** | **Pydantic v2** | The AI's JSON output is untrusted text — Pydantic validates and coerces it into a strict schema (`PageEvaluationResponse`) before it ever reaches the frontend. |
 | **Database** | **SQLite + aiosqlite** | Zero setup, file-based, async driver fits FastAPI's async handlers. No need for a separate DB server for a small single-file dataset. |
-| **AI vision** | **Groq (LLaMA 3.2 Vision, via an OpenAI-compatible endpoint)** | Groq's free tier is fast and supports vision — needed to read handwriting from a photo, not just text. |
+| **AI vision** | **Groq (Qwen3.6-27B, via an OpenAI-compatible endpoint)** | Groq's free tier is fast and supports vision — needed to read handwriting from a photo, not just text. |
 | **Resilience** | **httpx + manual retry loop + simulated fallback** | Groq's free tier returns HTTP 429 often. A retry-with-backoff loop absorbs transient limits; a deterministic offline simulator absorbs everything else so the user is never blocked. |
 | **PDF generation** | **PyMuPDF (`fitz`, imported as `pymupdf`)** | Can draw shapes/text directly onto pages and embed images — needed to burn colored mistake pins onto the photo itself, not just list them as text. |
 | **Frontend** | **React 18 + Vite** | Fast dev server, simple component model — no need for a heavier framework for a handful of views. |
@@ -353,4 +353,4 @@ This gets validated into `PageEvaluationResponse`, stored as `raw_json` in `eval
 
 ---
 
-*Built with FastAPI · Pydantic v2 · SQLite/aiosqlite · Groq (LLaMA 3.2 Vision) · PyMuPDF · React 18 + Vite · deployed on Render.*
+*Built with FastAPI · Pydantic v2 · SQLite/aiosqlite · Groq (Qwen3.6-27B) · PyMuPDF · React 18 + Vite · deployed on Render.*
