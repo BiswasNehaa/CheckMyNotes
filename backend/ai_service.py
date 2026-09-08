@@ -2,13 +2,12 @@ import asyncio
 import base64
 import json
 import os
-import random
 from pathlib import Path
 
 import httpx
 from dotenv import load_dotenv
 
-from schemas import MistakePin, PageEvaluationResponse
+from schemas import PageEvaluationResponse
 
 load_dotenv()
 
@@ -45,80 +44,6 @@ Look at the image and evaluate the work. Respond with ONLY a single JSON object 
 }
 
 Include 1-5 mistakes/highlights total, mixing severities as appropriate. Coordinates are percentages measured from the top-left corner of the image."""
-
-# Pool of sample remarks the offline simulator picks from.
-SAMPLE_REMARKS = [
-    {
-        "title": "Sign error in step 2",
-        "explanation": "You dropped a negative sign when moving the term across the equation.",
-        "severity": "error",
-        "corrected_step": "-2x = -8  ->  x = 4",
-        "concept_refresher": "Moving a term to the other side flips its sign.",
-    },
-    {
-        "title": "Messy handwriting",
-        "explanation": "Step 3 is hard to read, which could cost marks in an exam.",
-        "severity": "warning",
-        "corrected_step": None,
-        "concept_refresher": "Write numbers and operators with clear spacing.",
-    },
-    {
-        "title": "Correct final answer",
-        "explanation": "The final answer and units are correct.",
-        "severity": "good",
-        "corrected_step": None,
-        "concept_refresher": None,
-    },
-]
-
-
-def simulate_evaluation(page_id: str) -> PageEvaluationResponse:
-    """
-    Deterministic fake evaluation, used when no Groq API key is configured
-    or the real AI call fails/rate-limits even after retries.
-    Uses page_id as a random seed so the same page always gets the same result.
-    """
-    rng = random.Random(page_id)
-    score = round(rng.uniform(6.0, 9.5), 1)
-
-    if score >= 9:
-        grade_label = "A - Great Work"
-    elif score >= 7.5:
-        grade_label = "B - Good Effort"
-    else:
-        grade_label = "C - Needs Practice"
-
-    num_remarks = rng.randint(1, 3)
-    chosen = rng.sample(SAMPLE_REMARKS, num_remarks)
-
-    mistakes = [
-        MistakePin(
-            id=f"pin-{i + 1}",
-            x_percent=round(rng.uniform(10, 90), 1),
-            y_percent=round(rng.uniform(10, 90), 1),
-            severity=remark["severity"],
-            title=remark["title"],
-            explanation=remark["explanation"],
-            corrected_step=remark["corrected_step"],
-            concept_refresher=remark["concept_refresher"],
-        )
-        for i, remark in enumerate(chosen)
-    ]
-
-    total_mistakes = sum(1 for m in mistakes if m.severity == "error")
-    total_warnings = sum(1 for m in mistakes if m.severity == "warning")
-
-    return PageEvaluationResponse(
-        score=score,
-        grade_label=grade_label,
-        summary="Simulated evaluation (AI unavailable): overall solid work with a few points to review.",
-        total_mistakes=total_mistakes,
-        total_warnings=total_warnings,
-        mistakes=mistakes,
-        key_concepts_tested=["Linear equations"],
-        strengths=["Clear final answer"],
-        areas_to_improve=["Double-check sign changes"],
-    )
 
 
 def _encode_image(image_path: Path) -> str:
@@ -182,17 +107,13 @@ async def call_groq_vision(image_path: Path) -> PageEvaluationResponse:
 
 async def evaluate_page(page_id: str, image_path: Path) -> PageEvaluationResponse:
     """
-    Evaluate a notebook page.
-    Uses real Groq AI vision if an API key is configured; falls back to a
-    simulated evaluation if there's no key, or the AI call fails/rate-limits.
+    Evaluate a notebook page using real Groq AI vision.
+    Raises RuntimeError if no API key is configured, or the AI call fails/rate-limits
+    even after retries — callers must surface this as "AI unavailable", not hide it.
     """
-    if GROQ_API_KEY:
-        try:
-            result = await call_groq_vision(image_path)
-            print(f"[ai_service] REAL AI: Groq evaluation successful (page_id={page_id})")
-            return result
-        except Exception as exc:
-            print(f"[ai_service] GROQ FAILED (page_id={page_id}): {exc}")
+    if not GROQ_API_KEY:
+        raise RuntimeError("GROQ_API_KEY is not configured")
 
-    print(f"[ai_service] FALLBACK: simulated evaluation used (page_id={page_id})")
-    return simulate_evaluation(page_id)
+    result = await call_groq_vision(image_path)
+    print(f"[ai_service] REAL AI: Groq evaluation successful (page_id={page_id})")
+    return result

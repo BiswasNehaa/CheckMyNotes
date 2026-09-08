@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { API_BASE, downloadNotebookPdf, downloadPagePdf, downloadSessionPdf, getNotebook } from '../api'
+import { API_BASE, downloadNotebookPdf, downloadPagePdf, downloadSessionPdf, evaluatePage, getNotebook } from '../api'
 
 export default function NotebookViewer({ subjects }) {
   const [subjectId, setSubjectId] = useState('')
@@ -8,6 +8,7 @@ export default function NotebookViewer({ subjects }) {
   const [activeMistake, setActiveMistake] = useState(null)
   const [error, setError] = useState('')
   const [downloading, setDownloading] = useState('')
+  const [retrying, setRetrying] = useState(false)
 
   function handleSelectPage(page) {
     setSelectedPage(page)
@@ -47,6 +48,24 @@ export default function NotebookViewer({ subjects }) {
       setError(err.message)
     } finally {
       setDownloading('')
+    }
+  }
+
+  async function handleRetryEvaluation(page) {
+    setError('')
+    setRetrying(true)
+    try {
+      await evaluatePage(page.id)
+      const data = await getNotebook(subjectId)
+      setNotebook(data)
+      const refreshedPage = data.sessions
+        .flatMap((session) => session.pages)
+        .find((p) => p.id === page.id)
+      if (refreshedPage) setSelectedPage(refreshedPage)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setRetrying(false)
     }
   }
 
@@ -154,7 +173,16 @@ export default function NotebookViewer({ subjects }) {
                   </div>
                 )}
 
-                {!selectedPage.evaluation && (
+                {!selectedPage.evaluation && selectedPage.status === 'failed' && (
+                  <div className="pending-note">
+                    <p>AI checking is currently unavailable for this page. Please try again shortly.</p>
+                    <button onClick={() => handleRetryEvaluation(selectedPage)} disabled={retrying}>
+                      {retrying ? 'Retrying...' : 'Try Again'}
+                    </button>
+                  </div>
+                )}
+
+                {!selectedPage.evaluation && selectedPage.status !== 'failed' && (
                   <p className="pending-note">This page is still pending evaluation.</p>
                 )}
 

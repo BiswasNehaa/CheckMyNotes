@@ -33,11 +33,22 @@ export default function UploadView({ subjects, onUploaded }) {
       setMessage('Uploaded! Evaluating...')
 
       setStatus('evaluating')
+      let failedCount = 0
       for (const page of result.uploaded) {
-        await evaluatePage(page.id)
+        try {
+          await evaluatePage(page.id)
+        } catch {
+          failedCount++
+        }
       }
 
-      setMessage(`Uploaded and evaluated ${result.uploaded.length} page(s) successfully.`)
+      if (failedCount > 0) {
+        setMessage(
+          `Uploaded ${result.uploaded.length} page(s). ${failedCount} could not be checked by AI right now — open the Notebook view to retry them.`
+        )
+      } else {
+        setMessage(`Uploaded and evaluated ${result.uploaded.length} page(s) successfully.`)
+      }
       setFiles([])
       e.target.reset()
       onUploaded?.()

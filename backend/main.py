@@ -212,7 +212,18 @@ async def evaluate_uploaded_page(page_id: str, db: aiosqlite.Connection = Depend
         if cache_row:
             cached_evaluation = PageEvaluationResponse.model_validate_json(cache_row["raw_json"])
 
-    evaluation = cached_evaluation or await evaluate_page(page_id, UPLOADS_DIR / page["file_path"])
+    if cached_evaluation:
+        evaluation = cached_evaluation
+    else:
+        try:
+            evaluation = await evaluate_page(page_id, UPLOADS_DIR / page["file_path"])
+        except Exception:
+            await db.execute("UPDATE notebook_pages SET status = 'failed' WHERE id = ?", (page_id,))
+            await db.commit()
+            raise HTTPException(
+                status_code=503,
+                detail="AI evaluation is currently unavailable. Please try again shortly.",
+            )
 
     await db.execute(
         """INSERT INTO evaluations

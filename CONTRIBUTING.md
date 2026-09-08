@@ -4,7 +4,7 @@ Thanks for considering a contribution! This is a small student project, so the p
 
 ## Getting Set Up
 
-Follow the [Self-Hosting section in README.md](./README.md#-self-hosting) to get the backend and frontend running locally. You don't need a Groq API key to develop — the app falls back to a deterministic simulated evaluation with no key configured.
+Follow the [Self-Hosting section in README.md](./README.md#-self-hosting) to get the backend and frontend running locally. You'll need a free Groq API key to actually evaluate pages — without one, uploads still work but every evaluation returns "AI unavailable."
 
 For a full explanation of how the code is organized and why, read [ARCHITECTURE.md](./ARCHITECTURE.md) before making non-trivial changes.
 

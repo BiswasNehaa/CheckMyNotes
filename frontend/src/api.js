@@ -56,7 +56,10 @@ export async function createSubject(subject) {
 
 export async function evaluatePage(pageId) {
   const res = await fetch(`${API_BASE}/pages/${pageId}/evaluate`, { method: 'POST' })
-  if (!res.ok) throw new Error('Failed to evaluate page')
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new Error(body?.detail || 'Failed to evaluate page')
+  }
   return res.json()
 }
 

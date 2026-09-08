@@ -12,7 +12,7 @@ An AI-powered academic web application where students upload photos of their han
    - Uses **Groq (Qwen3.6-27B vision, configurable via `GROQ_MODEL`)** on the free tier.
    - Generates scores, teacher remarks, step-by-step green/red correctness checks, and normalized `(X, Y)` coordinate pins.
    - **Rate-Limit Resilience**: Exponential backoff retry handler for HTTP 429 errors.
-   - **Smart Fallback Engine**: Built-in offline evaluation simulation guaranteeing 100% demo uptime without requiring an API key.
+   - **Honest Failure Handling**: if the AI is unavailable after retries, the page is marked `failed` with a clear retry option — never a fabricated grade.
 4. **Interactive Notebook & Remarks Viewer**:
    - Per-subject digital binder with daily session timeline filters.
    - Zoomable page canvas with interactive pulsating error pins.
@@ -30,7 +30,7 @@ An AI-powered academic web application where students upload photos of their han
 | **Backend API** | **Python 3.13 + FastAPI + Uvicorn** | High-performance asynchronous REST API with auto-generated interactive OpenAPI docs (`/docs`). |
 | **Data Validation** | **Pydantic v2** | Strict, type-safe schemas for AI vision outputs, error coordinates, and upload payloads. |
 | **AI / Vision Pipeline** | **Groq API (Qwen3.6-27B vision)** | Multimodal handwriting OCR & step-by-step grading on free tier, with prompt engineering. |
-| **Resilience & Fallback** | **Python Backoff + Smart Offline Evaluator** | Handles rate-limiting (HTTP 429) smoothly with exponential retries and built-in offline simulation if no API key is provided. |
+| **Resilience** | **httpx + manual retry loop** | Handles rate-limiting (HTTP 429) with exponential backoff retries; a failure that survives retries is reported explicitly, never masked. |
 | **PDF Generation** | **PyMuPDF (`fitz`)** | Fast, high-fidelity PDF compilation with table of contents, annotated scans, and summary cards. |
 | **Database** | **SQLite + aiosqlite** | Lightweight, file-based persistent storage for subjects, daily uploads, and AI remarks. |
 | **Frontend UI** | **React 18 + Vite + Modern CSS** | Interactive notebook canvas with zoom/pan, pulsating mistake pins, timeline filter, and student dashboard. |
@@ -46,7 +46,7 @@ Acadine/
 │   ├── main.py          # FastAPI REST endpoints & background tasks
 │   ├── schemas.py       # Pydantic v2 data models
 │   ├── database.py      # SQLite tables & async connection manager
-│   ├── ai_service.py    # AI vision pipeline, retries & smart fallback
+│   ├── ai_service.py    # AI vision pipeline & retry logic
 │   ├── pdf_service.py   # PyMuPDF PDF compilation engine
 │   ├── seed.py          # Sample notebook data generator
 │   └── requirements.txt # Python dependencies
@@ -88,7 +88,7 @@ This project runs on one shared AI backend, so if you fork/clone it, you'll need
    npm run dev
    ```
 
-No key? The app still works — it falls back to a simulated (but consistent) evaluation for every upload, so you can try the full flow without signing up for anything.
+No key? Uploading still works, but evaluation will return "AI unavailable" for every page — a Groq API key is required to actually grade anything.
 
 ---
 
