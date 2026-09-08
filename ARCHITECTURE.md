@@ -93,7 +93,7 @@ Student (browser)
                     ▼
         ┌───────────────────────────┐
         │ Same image hash seen      │
-        │ before (any page)?        │──Yes──► reuse cached evaluation JSON
+        │ for this student?         │──Yes──► reuse cached evaluation JSON
         └───────────┬───────────────┘
                     │ No
                     ▼
@@ -173,7 +173,7 @@ Note: **uploading does not evaluate.** It only stores files and creates pending 
 
 ### `POST /pages/{page_id}/evaluate`
 1. Looks up the page's `image_hash`.
-2. **Cache check**: queries for any *other* page with the same hash that already has an evaluation, most recent first. If found, reuses that evaluation's JSON verbatim — no AI call at all.
+2. **Cache check**: queries for another page belonging to the same student with the same hash and an existing evaluation, most recent first. If found, reuses that evaluation's JSON verbatim — no AI call at all.
 3. Otherwise calls `evaluate_page()` (see `ai_service.py` below).
 4. Inserts a new `evaluations` row and flips the page's status to `"completed"`.
 

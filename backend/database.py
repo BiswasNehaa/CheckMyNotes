@@ -74,6 +74,9 @@ async def init_db():
             await db.execute("ALTER TABLE notebook_pages ADD COLUMN image_hash TEXT")
         except aiosqlite.OperationalError:
             pass
+        await db.execute(
+            "CREATE INDEX IF NOT EXISTS idx_notebook_pages_hash ON notebook_pages(image_hash)"
+        )
 
         # 4. Evaluations Table (stores AI scores, summaries, and mistake pins JSON)
         await db.execute("""
