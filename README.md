@@ -1,6 +1,6 @@
 # 📚 AI Student Notebook Checker
 
-An AI-powered academic web application where students upload photos of their handwritten notebook pages, have them automatically evaluated by multimodal AI vision models (Groq LLaMA 3.2 Vision & Gemini 1.5 Flash), review pinpointed visual mistake annotations per subject, and export single-day or merged semester notebook PDFs.
+An AI-powered academic web application where students upload photos of their handwritten notebook pages, have them automatically evaluated by a multimodal AI vision model (Groq's Qwen3.6-27B), review pinpointed visual mistake annotations per subject, and export single-day or merged semester notebook PDFs.
 
 ---
 
@@ -9,7 +9,7 @@ An AI-powered academic web application where students upload photos of their han
 1. **Student Dashboard & Profile**: Switch student profiles, track subjects, and monitor average grades.
 2. **Daily Multi-Page Upload**: Drag-and-drop handwritten scans/photos, tag to a subject (Math, Physics, Chemistry, etc.), set upload dates, and preview pages.
 3. **AI Vision Checking Pipeline**:
-   - Uses **Groq (LLaMA 3.2 11B/90B Vision)** & **Google Gemini 1.5 Flash** on free tiers.
+   - Uses **Groq (Qwen3.6-27B vision, configurable via `GROQ_MODEL`)** on the free tier.
    - Generates scores, teacher remarks, step-by-step green/red correctness checks, and normalized `(X, Y)` coordinate pins.
    - **Rate-Limit Resilience**: Exponential backoff retry handler for HTTP 429 errors.
    - **Smart Fallback Engine**: Built-in offline evaluation simulation guaranteeing 100% demo uptime without requiring an API key.
@@ -29,7 +29,7 @@ An AI-powered academic web application where students upload photos of their han
 | :--- | :--- | :--- |
 | **Backend API** | **Python 3.13 + FastAPI + Uvicorn** | High-performance asynchronous REST API with auto-generated interactive OpenAPI docs (`/docs`). |
 | **Data Validation** | **Pydantic v2** | Strict, type-safe schemas for AI vision outputs, error coordinates, and upload payloads. |
-| **AI / Vision Pipeline** | **Groq API (LLaMA 3.2 Vision) & Google Gemini 1.5 Flash** | Multimodal handwriting OCR & step-by-step grading on free tier, with prompt engineering. |
+| **AI / Vision Pipeline** | **Groq API (Qwen3.6-27B vision)** | Multimodal handwriting OCR & step-by-step grading on free tier, with prompt engineering. |
 | **Resilience & Fallback** | **Python Backoff + Smart Offline Evaluator** | Handles rate-limiting (HTTP 429) smoothly with exponential retries and built-in offline simulation if no API key is provided. |
 | **PDF Generation** | **PyMuPDF (`fitz`) + Pillow (PIL)** | Fast, high-fidelity PDF compilation with table of contents, annotated scans, and summary cards. |
 | **Database** | **SQLite + aiosqlite** | Lightweight, file-based persistent storage for subjects, daily uploads, and AI remarks. |
