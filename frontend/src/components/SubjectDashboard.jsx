@@ -43,6 +43,16 @@ export default function SubjectDashboard({ subjects, onSubjectCreated }) {
             <h3>{subject.name}</h3>
             <p>{subject.page_count} pages uploaded</p>
             <p>Average score: {subject.average_score ?? 'N/A'}</p>
+            <p>
+              Last updated:{' '}
+              {subject.last_updated
+                ? new Date(subject.last_updated.replace(' ', 'T') + 'Z').toLocaleDateString(undefined, {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                  })
+                : 'N/A'}
+            </p>
           </div>
         ))}
       </div>

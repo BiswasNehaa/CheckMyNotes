@@ -31,7 +31,7 @@ An AI-powered academic web application where students upload photos of their han
 | **Data Validation** | **Pydantic v2** | Strict, type-safe schemas for AI vision outputs, error coordinates, and upload payloads. |
 | **AI / Vision Pipeline** | **Groq API (Qwen3.6-27B vision)** | Multimodal handwriting OCR & step-by-step grading on free tier, with prompt engineering. |
 | **Resilience & Fallback** | **Python Backoff + Smart Offline Evaluator** | Handles rate-limiting (HTTP 429) smoothly with exponential retries and built-in offline simulation if no API key is provided. |
-| **PDF Generation** | **PyMuPDF (`fitz`) + Pillow (PIL)** | Fast, high-fidelity PDF compilation with table of contents, annotated scans, and summary cards. |
+| **PDF Generation** | **PyMuPDF (`fitz`)** | Fast, high-fidelity PDF compilation with table of contents, annotated scans, and summary cards. |
 | **Database** | **SQLite + aiosqlite** | Lightweight, file-based persistent storage for subjects, daily uploads, and AI remarks. |
 | **Frontend UI** | **React 18 + Vite + Modern CSS** | Interactive notebook canvas with zoom/pan, pulsating mistake pins, timeline filter, and student dashboard. |
 | **UI Icons** | **Lucide React** | Clean, modern iconography for student tools. |
